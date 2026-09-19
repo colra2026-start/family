@@ -1,5 +1,5 @@
 const SETTLEMENT_ENABLED=false;
-// FAMILY v001: 관리자 3명 동일 큰실장 권한 / 비번 3535 / 언니앱 미사용 / 일끝 시간만 입력
+// FAMILY v002: 관리자3명 동일권한 유지 / UI 단순화
 // v101: 가나 관리자 탭은 UI에서 제거, colra2 로그인 비밀번호는 colra1과 동일한 8989
 // 큰실장 역할은 여기 한 곳에서 관리한다. 테스트 종료 후 '실장A'(colra1)로 바꾸면 된다.
 const BIG_MANAGER_KEY='실장A';

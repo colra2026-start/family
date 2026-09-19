@@ -15,7 +15,7 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',replaceText,{once:true});else replaceText();
 })();
 
-// FAMILY v001 · 관리자3명 동일권한 · 비번3535 · 언니앱 비활성 · 일끝시간만 입력
+// FAMILY v002 · 출근소속동적 · 초이스전송팝업제거 · 정산UI삭제 · 3실장현황검색공유
 const KEY='family_login_v1';const SETTLEMENT_ENABLED=false;
 const AUTO_LOGOUT_MS=30*60*1000;
 
@@ -535,7 +535,11 @@ function formatArrivalTime(value){
 }
 
 function testSettlementAnalysis(row){try{return typeof row.analysis_json==='string'?JSON.parse(row.analysis_json||'{}'):(row.analysis_json||{})}catch(_){return {}}}
-function ensureTestSettlementPanels(){let wrap=document.getElementById('testSettlementWrap');if(!isBigManagerClient()){wrap?.remove();return null}if(wrap)return wrap;wrap=document.createElement('section');wrap.id='testSettlementWrap';wrap.innerHTML=`<details class="card section-card" open><summary><span>언니 정산정보</span> <span id="testPendingBadge">0건</span></summary><div id="testPendingList" class="list"></div></details><details class="card section-card"><summary><span>정산확인</span> <span id="testReviewBadge">0건</span></summary><div id="testReviewList" class="list"></div></details>`;const main=document.querySelector('main');const manage=document.querySelector('section.manage');if(main){if(manage&&manage.parentNode===main)main.insertBefore(wrap,manage);else main.appendChild(wrap)}return wrap}
+function ensureTestSettlementPanels(){
+  const wrap=document.getElementById('testSettlementWrap');
+  if(wrap)wrap.remove();
+  return null;
+}
 function reportCompare(r){const mt=r.manager_t??r.t_value,mr=r.manager_r??r.r_value,my=r.manager_yc??r.yc_value,at=r.agreed_t??mt,ar=r.agreed_r??mr,ay=r.agreed_yc??my;return {mt,mr,my,at,ar,ay}}
 function renderTestSisterSettlements(){const wrap=ensureTestSettlementPanels();if(!wrap)return;const pending=S.test_settlement_pending||[],review=S.test_settlement_review||[];$('#testPendingBadge').textContent=pending.length+'건';$('#testReviewBadge').textContent=review.length+'건';$('#testPendingList').innerHTML=pending.length?pending.map(r=>`<article class="sister-settlement-item"><div class="sister-settlement-head"><b>${esc(r.name)}</b><span>${esc(r.shop_name||'')}</span></div><div class="sister-ai-box">언니 입력값 · T ${r.t_value} / R ${r.r_value} / ㅇㅊ ${r.yc_value}</div><div class="mobile-action-row" style="justify-content:flex-end"><button class="row-btn pass" onclick="confirmTestSettlement(${r.id})">확인</button><button class="row-btn" onclick="editTestSettlement(${r.id})">수정</button></div></article>`).join(''):'<div class="empty">전송된 정산정보가 없습니다.</div>';$('#testReviewList').innerHTML=review.length?review.map(r=>{const c=reportCompare(r),changed=Number(r.t_value)!==Number(c.mt)||Number(r.r_value)!==Number(c.mr)||Number(r.yc_value)!==Number(c.my);return `<article class="sister-settlement-item"><div class="sister-settlement-head"><b>${esc(r.name)}</b><span>${esc(r.shop_name||'')}</span></div><div class="sister-original-message">언니 입력 · T ${r.t_value} / R ${r.r_value} / ㅇㅊ ${r.yc_value}</div><div class="sister-ai-box">${changed?'큰실장 수정':'큰실장 확인'} · T ${c.mt} / R ${c.mr} / ㅇㅊ ${c.my}${(r.agreed_t!=null||r.agreed_r!=null||r.agreed_yc!=null)?`<br><b>협의값 · T ${c.at} / R ${c.ar} / ㅇㅊ ${c.ay}</b>`:''}</div><div class="mobile-action-row" style="justify-content:flex-end"><button class="row-btn" onclick="agreeEditTestSettlement(${r.id})">협의수정</button><button class="row-btn pass" onclick="finalTestSettlement(${r.id})">최종확인</button></div></article>`}).join(''):'<div class="empty">정산확인 건이 없습니다.</div>'}
 async function confirmTestSettlement(id){await api('/test-settlement/review',{method:'POST',body:JSON.stringify({id,mode:'confirm'})});await refresh(true)}
@@ -545,7 +549,6 @@ async function finalTestSettlement(id){if(!confirm('이 정산을 최종확인�
 function render(){
   presence();
   applyManagerView();
-  renderTestSisterSettlements();
 
   const attendance=uniqueAttendance(S.attendance||[]);
   const cw=attendance.filter(a=>a.status==='출근대기');
@@ -786,7 +789,7 @@ window.toggleWorkLogEditValue=btn=>{
   updateWorkLogEditHidden();
 };
 function editWorkLogInfo(itemId,jobId,current=''){
-  if(activeManager!=='실장A')return alert('colra1만 수정할 수 있습니다.');
+  if(!isBigManagerClient())return alert('실장 권한이 필요합니다.');
   modal('일한현황 정보 수정',finishInfoEditorHtml(current),async f=>{
     const received=f.get('received_info')||'';
     if(!received)throw new Error('타임, Room, ㅇㅊ 중 선택값을 입력해 주세요.');
@@ -800,7 +803,7 @@ function editWorkLogInfo(itemId,jobId,current=''){
   $('#form menu button[value="ok"]').textContent='저장';
 }
 async function deleteAllTodayWorkLogs(day){
-  if(activeManager!=='실장A')return alert('colra1만 전체삭제할 수 있습니다.');
+  if(!isBigManagerClient())return alert('실장 권한이 필요합니다.');
   if(!confirm('현재 표시된 일한현황을 화면에서만 지우시겠습니까?\nDB 원본 기록은 그대로 보관됩니다.'))return;
   await api('/work-logs/delete-all',{method:'POST',body:JSON.stringify({day,manager:activeManager})});
   await refresh(true);
@@ -808,14 +811,14 @@ async function deleteAllTodayWorkLogs(day){
 window.deleteAllTodayWorkLogs=deleteAllTodayWorkLogs;
 async function hideWorkLogDay(event,day){
   if(event){event.preventDefault();event.stopPropagation();}
-  if(activeManager!=='실장A')return alert('colra1만 해당 날짜를 삭제할 수 있습니다.');
+  if(!isBigManagerClient())return alert('실장 권한이 필요합니다.');
   if(!confirm(`${day} 일한현황을 화면에서 전체 삭제하시겠습니까?\nDB 원본 기록은 그대로 보관됩니다.`))return;
   await api('/work-logs/delete-all',{method:'POST',body:JSON.stringify({day,manager:activeManager})});
   await refresh(true);
 }
 window.hideWorkLogDay=hideWorkLogDay;
 async function deleteWorkLogItem(itemId,jobId,label='',staffName=''){
-  if(activeManager!=='실장A')return alert('colra1만 삭제할 수 있습니다.');
+  if(!isBigManagerClient())return alert('실장 권한이 필요합니다.');
   if(!confirm(`${label||'선택한 기록'}을 일한현황에서 완전히 삭제하시겠습니까?\n이 기록은 DB에서도 삭제되며 복구되지 않습니다.`))return;
   await api('/work-logs/delete-item',{method:'POST',body:JSON.stringify({id:itemId||null,job_id:jobId||null,staff_name:staffName||'',manager:activeManager})});
   alert('테스트 기록을 완전히 삭제했습니다.');
@@ -854,7 +857,7 @@ function ensureWorkLogSection(){
 }
 let workLogSearchDays=3;
 function openWorkLogPeriodSearch(){
-  if(activeManager!=='실장A')return;
+  if(!isBigManagerClient())return;
   const staff=String($('#workLogSearchStaff')?.value||'').trim();
   const shop=String($('#workLogSearchShop')?.value||'').trim();
   const inputStartDate=String($('#workLogSearchStartDate')?.value||'').trim();
@@ -938,7 +941,7 @@ async function renderTodayWorkLogs(){
   if(!sec||!body)return;
 
   const searchSec=$('#workLogSearchSection');
-  if(activeManager!=='실장A'){
+  if(!isBigManagerClient()){
     sec.style.display='none';
     if(searchSec)searchSec.style.display='none';
     return;
@@ -1024,16 +1027,14 @@ function modal(t,h,cb,okLabel='저장',cancelLabel='취소'){
 $('#addStaffBtn').onclick=()=>modal('언니 등록',`<label>소속</label><input name="affiliation" required><label>이름</label><input name="name" required><label>전화번호</label><input name="phone" inputmode="tel"><label>가능 유형</label><div class="check-grid"><label class="check-card"><input type="checkbox" name="types" value="T" checked>T</label><label class="check-card"><input type="checkbox" name="types" value="M">M</label><label class="check-card"><input type="checkbox" name="types" value="ㅈㅇ">ㅈㅇ</label></div><label>메모</label><textarea name="memo" class="memo-box" rows="4" placeholder="메모를 입력하세요"></textarea>`,f=>api('/staff',{method:'POST',body:JSON.stringify({affiliation:f.get('affiliation'),name:f.get('name'),phone:f.get('phone'),work_types:f.getAll('types').join(','),memo:f.get('memo'),hourly:0,fee:0})}));
 $('#addShopBtn').onclick=()=>modal('노래방 등록',`<label>노래방명</label><input name="name" required><label>전화번호</label><input name="phone"><label>메모</label><textarea name="memo"></textarea>`,f=>api('/shops',{method:'POST',body:JSON.stringify(Object.fromEntries(f))}));
 function openCheckinWaitingRegister(directActive=false){
-  const groups=[
-    {label:'쿠팡',aliases:['쿠팡']},
-    {label:'콜라',aliases:['콜라']},
-    {label:'가나',aliases:['가나','Ghana','ghana','GHANA']}
-  ];
   const activeStaff=S.staff.filter(x=>!+x.deleted);
+  const groups=[...new Set(activeStaff.map(x=>String(x.affiliation||'').trim()).filter(Boolean))]
+    .sort((a,b)=>a.localeCompare(b,'ko'))
+    .map(a=>({label:a,aliases:[a]}));
   const html=`
     <label>언니 선택</label>
     <div class="staff-sector-wrap">
-      ${groups.map(group=>{
+      ${groups.length?groups.map(group=>{
         const members=activeStaff
           .filter(x=>group.aliases.includes(String(x.affiliation||'').trim()))
           .sort((a,b)=>String(a.name).localeCompare(String(b.name),'ko'));
@@ -1045,7 +1046,7 @@ function openCheckinWaitingRegister(directActive=false){
             `).join(''):'<div class="empty small">등록된 언니 없음</div>'}
           </div>
         </section>`;
-      }).join('')}
+      }).join(''):'<div class="empty">언니등록에서 소속과 언니를 먼저 등록해 주세요.</div>'}
     </div>
     <input type="hidden" name="staff_id" id="selectedStaffId">
     <label>메모</label>
@@ -1103,7 +1104,7 @@ function openShopChoice(attendanceIds){
     if(ids.length===1){
       const started=await api('/choice/start',{method:'POST',body:JSON.stringify({attendance_id:ids[0],shop_id:shopId,manager:activeManager})});
       await refresh(true);
-      if(isBigManagerClient()&&Number(started?.job_id)&&!started?.reroute_pending)setTimeout(()=>openSisterSend(Number(started.job_id),shopId),80);
+      // FAMILY는 언니앱을 운영하지 않으므로 초이스 전송 팝업을 열지 않는다.
     }else{
       await api('/choice/start-multiple',{method:'POST',body:JSON.stringify({attendance_ids:ids,shop_id:shopId,manager:activeManager})});
       await refresh(true);
