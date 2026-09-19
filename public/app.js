@@ -1,5 +1,22 @@
-// v102 라라→유진 이름통합 · 언니등록 삭제오류 안내개선
-const KEY='colra_login_v3';const SETTLEMENT_ENABLED=false;
+
+(function familyBranding(){
+  const style=document.createElement('style');
+  style.textContent='.sister-app-link-btn{display:none!important}';
+  document.head.appendChild(style);
+  document.title='FAMILY';
+  const replaceText=()=>{
+    const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+    const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
+    nodes.forEach(n=>{
+      if(!n.parentElement||['SCRIPT','STYLE','TEXTAREA','INPUT'].includes(n.parentElement.tagName))return;
+      n.nodeValue=n.nodeValue.replace(/\bCOLRA\b/g,'FAMILY').replace(/콜라 안내앱/g,'패밀리').replace(/콜라/g,'패밀리');
+    });
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',replaceText,{once:true});else replaceText();
+})();
+
+// FAMILY v001 · 관리자3명 동일권한 · 비번3535 · 언니앱 비활성 · 일끝시간만 입력
+const KEY='family_login_v1';const SETTLEMENT_ENABLED=false;
 const AUTO_LOGOUT_MS=30*60*1000;
 
 // v096: 브라우저 기본 alert/confirm 제거 - 실장앱은 무확인 실행 + 비차단 안내만 사용
@@ -80,9 +97,18 @@ let lastActivityAt=Date.now(),logoutRunning=false;
 
 (function(){if(document.getElementById('test-flow-style'))return;const st=document.createElement('style');st.id='test-flow-style';st.textContent='.test-eta-choice.active,.test-driver-choice.active,.driver-reason.active{background:#2563eb!important;color:#fff!important}.row-btn.pass.active,#driverAccept.active,#rerouteAccept.active{background:#f97316!important;color:#fff!important;border-color:#f97316!important}.sister-settlement-item{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px;margin:10px 0}.sister-settlement-head{display:flex;justify-content:space-between;gap:10px;font-weight:900}.sister-original-message{margin-top:10px;padding:10px;background:#f8fafc;border-radius:10px}.sister-ai-box{margin:10px 0;padding:10px;background:#eff6ff;border-radius:10px;line-height:1.6}#testSettlementWrap{margin-top:14px}#testSettlementWrap details{margin-bottom:10px;padding:12px}';document.head.appendChild(st)})();
 let activeManager='',multiChoiceMode=false,multiChoiceSelected=[],multiChoiceOriginalOrder=[],S={staff:[],shops:[],attendance:[],jobs:[],pickups:[],pickup_requests:[],sister_settlement_messages:[],test_pickup_flows:[],test_choice_results:[],test_settlement_pending:[],test_settlement_review:[],presence:[],version:0};const $=s=>document.querySelector(s),esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])),won=n=>(+n||0).toLocaleString('ko-KR')+'원';
-function isBigManagerClient(){return Boolean(S&&S.is_big_manager)||managerKey(activeManager)==='실장T';}
-function managerDisplayName(name){return ({'실장T':'test','실장A':'colra1','실장B':'Ghana','실장C':'colra2'})[name]||name;}
-function managerKey(name){const raw=String(name||'').trim();const low=raw.toLowerCase();return ({'실장T':'실장T','test':'실장T','TEST':'실장T','Test':'실장T','colra1test':'실장T','콜라1테스트':'실장T','실장A':'실장A','colra1':'실장A','실장B':'실장B','chana':'실장B','Ghana':'실장B','ghana':'실장B','remon':'실장B','실장C':'실장C','colra2':'실장C'})[raw]||({'test':'실장T','TEST':'실장T','Test':'실장T','colra1test':'실장T','콜라1테스트':'실장T','colra1':'실장A','chana':'실장B','ghana':'실장B','remon':'실장B','colra2':'실장C'})[low]||raw;}
+function isBigManagerClient(){return ['실장A','실장B','실장C'].includes(managerKey(activeManager));}
+function managerDisplayName(name){return ({'실장A':'패밀리-가나','실장B':'패밀리-스마일','실장C':'패밀리-구글'})[name]||name;}
+function managerKey(name){
+  const raw=String(name||'').trim();
+  const low=raw.toLowerCase();
+  const map={
+    '실장A':'실장A','패밀리-가나':'실장A','family-gana':'실장A','가나':'실장A',
+    '실장B':'실장B','패밀리-스마일':'실장B','family-smile':'실장B','스마일':'실장B',
+    '실장C':'실장C','패밀리-구글':'실장C','family-google':'실장C','구글':'실장C'
+  };
+  return map[raw]||map[low]||raw;
+}
 function clearBrowserData(){
   try{localStorage.clear()}catch{}
   try{sessionStorage.clear()}catch{}
@@ -107,12 +133,12 @@ async function secureLogout(reason=''){
 }
 function markActivity(){lastActivityAt=Date.now()}
 ['pointerdown','keydown','touchstart','scroll'].forEach(ev=>document.addEventListener(ev,markActivity,{passive:true}));
-function managerContact(name){return ({'실장T':{display:'test',phone:''},'실장A':{display:'colra1',phone:'01056633885'},'실장B':{display:'Ghana',phone:'01082996058'},'실장C':{display:'colra2',phone:'01089197111'}})[name];}
+function managerContact(name){return ({'실장A':{display:'패밀리-가나',phone:''},'실장B':{display:'패밀리-스마일',phone:''},'실장C':{display:'패밀리-구글',phone:''}})[name];}
 function shopById(id){return (S.shops||[]).find(x=>Number(x.id)===Number(id))||null;}
 function shopButton(shopId,shopName){const id=Number(shopId||0);const name=esc(shopName||'노래방');if(!id)return `<button type="button" class="shop-name-btn" onclick="showShopMemo(0,'${name}')">${name}</button>`;return `<button type="button" class="shop-name-btn" onclick="showShopMemo(${id},'${name}')">${name}</button>`;}
 function showShopMemo(shopId,shopName=''){const s=shopById(shopId);const name=s?.name||shopName||'노래방';const memo=s?.memo||'등록된 메모가 없습니다.';modal('노래방 메모',`<div class="shop-memo-popup"><div class="shop-memo-name">${esc(name)}</div><div class="shop-memo-phone">${esc(s?.phone||'')}</div><div class="shop-memo-text">${esc(memo).replace(/\n/g,'<br>')}</div></div>`,async()=>{});const menu=$('#form menu');menu.innerHTML='';if(s){const edit=document.createElement('button');edit.type='button';edit.className='btn edit-shop-memo-btn';edit.textContent='수정';edit.onclick=()=>editShop(s.id);menu.append(edit)}const close=document.createElement('button');close.type='button';close.className='btn';close.textContent='닫기';close.onclick=()=>$('#dlg').close();menu.append(close)}
 function showManagerContact(name){const c=managerContact(name);if(!c)return;modal(c.display+' 연락',`<div class="staff-profile"><div class="staff-profile-name">${esc(c.display)}</div><div class="staff-profile-phone">${esc(c.phone)}</div></div>`,async()=>{});const menu=$('#form menu');menu.innerHTML='';const call=document.createElement('button');call.type='button';call.className='btn green';call.textContent='통화';call.onclick=()=>callStaff(c.phone);const sms=document.createElement('button');sms.type='button';sms.className='btn primary';sms.textContent='문자';sms.onclick=()=>textStaff(c.phone);const close=document.createElement('button');close.type='button';close.className='btn';close.textContent='닫기';close.onclick=()=>$('#dlg').close();menu.append(call,sms,close)}
-async function applyManagerView(){const admin=activeManager==='실장A'&&SETTLEMENT_ENABLED;const p=$('#pendingSection'),d=$('#doneSection');if(p)p.style.display=admin?'':'none';if(d)d.style.display=admin?'':'none'}
+async function applyManagerView(){const admin=isBigManagerClient()&&SETTLEMENT_ENABLED;const p=$('#pendingSection'),d=$('#doneSection');if(p)p.style.display=admin?'':'none';if(d)d.style.display=admin?'':'none'}
 async function showMain(m){m=managerKey(m);activeManager=m;lastActivityAt=Date.now();$('#loginScreen').style.display='none';$('#mainApp').hidden=false;$('#currentManager').textContent=managerDisplayName(m)+' 로그인';applyManagerView();presence();await beat();await refresh(true);presence()}
 async function login(){
   const m=managerKey($('#loginManager').value),pw=$('#loginPassword').value.trim();
@@ -120,20 +146,29 @@ async function login(){
   try{const r=await fetch('/api/auth/login',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({manager:m,password:pw})});const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.message||'로그인에 실패했습니다.');await showMain(d.manager||m)}catch(e){$('#loginError').textContent=e.message||'로그인에 실패했습니다.'}
 }
 
-function ensureTestManagerUI(){
+function ensureFamilyManagerUI(){
   const sel=$('#loginManager');
   if(sel){
-    [...sel.options].forEach(o=>{if(managerKey(o.value||o.textContent)==='실장B')o.remove()});
-    if(!sel.querySelector('option[value="실장T"]')){const o=document.createElement('option');o.value='실장T';o.textContent='test';sel.appendChild(o)}
+    sel.innerHTML='';
+    [['실장A','패밀리-가나'],['실장B','패밀리-스마일'],['실장C','패밀리-구글']].forEach(([v,t])=>{
+      const o=document.createElement('option');o.value=v;o.textContent=t;sel.appendChild(o);
+    });
   }
-  const ghanaPresence=$('#presenceB');
-  if(ghanaPresence)ghanaPresence.remove();
-  const a=$('#presenceA');
-  if(a&&!$('#presenceT')){const b=a.cloneNode(true);b.id='presenceT';b.textContent='test 미접속';b.onclick=()=>showManagerContact('실장T');a.parentNode.appendChild(b)}
+  const t=$('#presenceT');if(t)t.remove();
+  const labels={A:'패밀리-가나',B:'패밀리-스마일',C:'패밀리-구글'};
+  ['A','B','C'].forEach(k=>{
+    const el=$('#presence'+k);
+    if(el){
+      el.style.display='';
+      el.textContent=labels[k]+' 미접속';
+      el.onclick=()=>showManagerContact('실장'+k);
+    }
+  });
 }
-ensureTestManagerUI();
+ensureFamilyManagerUI();
 
 $('#presenceA').onclick=()=>showManagerContact('실장A');
+$('#presenceB').onclick=()=>showManagerContact('실장B');
 $('#presenceC').onclick=()=>showManagerContact('실장C');
 $('#loginBtn').onclick=login;$('#loginPassword').onkeydown=e=>{if(e.key==='Enter')login()};$('#logoutBtn').onclick=()=>secureLogout('안전하게 로그아웃되었습니다.');
 (async()=>{try{const r=await fetch('/api/auth/status',{credentials:'same-origin',cache:'no-store'});const d=await r.json().catch(()=>({}));if(r.ok&&d.authenticated)await showMain(d.manager);else showLoginScreen('')}catch{showLoginScreen('')}})();
@@ -203,7 +238,7 @@ function checkTestChoiceResult(){if(!isBigManagerClient()||document.querySelecto
 function openTestPickupAssign(r){
   if(!r)return false;
   activeTestFlowId=Number(r.id);playTransitionDing();
-  const managers=['실장T','실장A','실장B','실장C'].map(v=>`<button type="button" class="staff-choice-btn test-driver-choice" data-manager="${v}">${esc(managerDisplayName(v))}</button>`).join('');
+  const managers=['실장A','실장B','실장C'].map(v=>`<button type="button" class="staff-choice-btn test-driver-choice" data-manager="${v}">${esc(managerDisplayName(v))}</button>`).join('');
   const rejectInfo=r.status==='rejected_confirmed'?`<div class="notice" style="margin-bottom:10px"><b>이전 배정 거절</b> · ${esc(managerDisplayName(r.assigned_manager||''))}<br>${esc(r.reject_reason||'')}${r.driver_message?'<br>'+esc(r.driver_message):''}<br><b>다시 배정해 주세요.</b></div>`:'';
   modal('실장 배정 및 도착시간 입력',`${rejectInfo}<div class="notice"><b>${esc(r.name)} · ${esc(r.shop_name||'')}</b><br>${esc(r.sister_request_type||'')} ${r.sister_message?'<br>'+esc(r.sister_message):''}</div><label>실장 배정</label><div class="staff-sector-grid">${managers}</div><input type="hidden" name="manager" id="testDriverManager"><label>예상 도착</label><div class="staff-sector-grid">${pickupEtaButtons()}</div><input type="hidden" name="eta" id="testEtaChoice">`,async f=>{const manager=String(f.get('manager')||''),eta=String(f.get('eta')||'');if(!manager||!eta)throw Error('실장과 예상도착을 선택해 주세요.');await api('/test-pickup/assign',{method:'POST',body:JSON.stringify({id:activeTestFlowId,manager,eta})});activeTestFlowId=0;await refresh(true)},'이동');
   document.querySelectorAll('.test-driver-choice').forEach(b=>b.onclick=()=>{document.querySelectorAll('.test-driver-choice').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('#testDriverManager').value=b.dataset.manager||''});
@@ -228,7 +263,7 @@ function checkSisterPickupRequest(){if(activePickupRequestId||activeTestFlowId||
   const assigned=flows.find(x=>x.status==='assigned'&&x.assigned_manager===activeManager);if(assigned){activeTestFlowId=Number(assigned.id);playTransitionDing();modal('픽업 배정 요청',`<div class="notice"><b>${esc(assigned.name)} · ${esc(assigned.shop_name||'')}</b><br>${esc(assigned.sister_request_type||'')} · ${esc(assigned.eta_choice||'')}</div><div class="row"><button type="button" id="driverAccept" class="row-btn pass">수락</button><button type="button" id="driverReject" class="row-btn end">거절</button></div><div id="driverRejectBox" style="display:none;margin-top:12px"><label>거절 이유</label><div class="staff-sector-grid"><button type="button" class="staff-choice-btn driver-reason" data-reason="위치에서 먼곳">위치에서 먼곳</button><button type="button" class="staff-choice-btn driver-reason" data-reason="초이스대기중">초이스대기중</button></div><input type="hidden" name="reason" id="driverReason"><label>다른 이유 / 메시지</label><textarea name="message"></textarea></div><input type="hidden" name="response" id="driverResponse">`,async f=>{const response=String(f.get('response')||'');if(!response)throw Error('수락 또는 거절을 선택해 주세요.');await api('/test-pickup/driver-response',{method:'POST',body:JSON.stringify({id:activeTestFlowId,response,reason:f.get('reason')||'',message:f.get('message')||''})});activeTestFlowId=0;await refresh(true)},'전송');$('#driverAccept').onclick=()=>{$('#driverResponse').value='수락';$('#driverAccept').classList.add('active');$('#driverReject').classList.remove('active');$('#driverRejectBox').style.display='none'};$('#driverReject').onclick=()=>{$('#driverResponse').value='거절';$('#driverReject').classList.add('active');$('#driverAccept').classList.remove('active');$('#driverRejectBox').style.display='block'};document.querySelectorAll('.driver-reason').forEach(b=>b.onclick=()=>{document.querySelectorAll('.driver-reason').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('#driverReason').value=b.dataset.reason||''});$('#dlg')?.addEventListener('close',()=>{activeTestFlowId=0},{once:true});return}
   const confirmed=flows.find(x=>['confirmed','rejected_confirmed'].includes(x.status)&&x.assigned_manager===activeManager&&!x.driver_acknowledged_at);if(confirmed){activeTestFlowId=Number(confirmed.id);playTransitionDing();const rejected=confirmed.status==='rejected_confirmed';modal('큰실장 확인완료',`<div class="notice"><b>${esc(confirmed.name)}</b><br>${rejected?'거절 내용이 큰실장에게 확인되었습니다. 다시 배정 대기합니다.':'픽업 배정이 최종 확인되었습니다.<br>'+esc(confirmed.eta_choice||'')}</div>`,async()=>{await api('/test-pickup/driver-ack',{method:'POST',body:JSON.stringify({id:activeTestFlowId})});activeTestFlowId=0;await refresh(true)},'확인','');return}
   if(!isBigManagerClient())return;
-  const r=(S.pickup_requests||[])[0];if(!r)return;activePickupRequestId=Number(r.assignment_id);const opts=['실장T','실장A','실장B','실장C'].map(x=>`<option value="${x}">${esc(managerDisplayName(x))}</option>`).join('');modal('언니 픽업 요청',`<div class="notice">${esc(r.name)} · ${esc(r.shop_name||'')}<br>${esc(r.pickup_request_type||'픽업 요청')}</div><label>픽업 실장</label><select name="manager">${opts}</select><label>예상 도착시간</label><input name="eta" placeholder="예: 15분 / 03:10" required>`,async f=>{await api('/sister/pickup/assign',{method:'POST',body:JSON.stringify({assignment_id:activePickupRequestId,manager:f.get('manager'),eta:f.get('eta')})});activePickupRequestId=0;await refresh(true)},'언니픽업요청');$('#dlg')?.addEventListener('close',()=>{activePickupRequestId=0},{once:true})}
+  const r=(S.pickup_requests||[])[0];if(!r)return;activePickupRequestId=Number(r.assignment_id);const opts=['실장A','실장B','실장C'].map(x=>`<option value="${x}">${esc(managerDisplayName(x))}</option>`).join('');modal('언니 픽업 요청',`<div class="notice">${esc(r.name)} · ${esc(r.shop_name||'')}<br>${esc(r.pickup_request_type||'픽업 요청')}</div><label>픽업 실장</label><select name="manager">${opts}</select><label>예상 도착시간</label><input name="eta" placeholder="예: 15분 / 03:10" required>`,async f=>{await api('/sister/pickup/assign',{method:'POST',body:JSON.stringify({assignment_id:activePickupRequestId,manager:f.get('manager'),eta:f.get('eta')})});activePickupRequestId=0;await refresh(true)},'언니픽업요청');$('#dlg')?.addEventListener('close',()=>{activePickupRequestId=0},{once:true})}
 function attendanceSnapshotKey(rows){return (rows||[]).map(a=>[a.id,a.staff_id,a.status,a.sequence,a.manager,a.memo].join('|')).sort().join('||')}
 async function refresh(force=false){try{
   const big=isBigManagerClient();
@@ -270,8 +305,8 @@ function checkOtherJobResponse(){
 }
 function checkSisterRejection(){if(!isBigManagerClient())return;const rows=S.sister_rejections||[];for(const r of rows){const k='sister_reject_seen_'+r.id;if(localStorage.getItem(k))continue;localStorage.setItem(k,'1');playTransitionDing();alert((r.name||'언니')+'이 초이스 수신을 거부했습니다.\n\n사유: '+(r.rejection_reason||'사유 없음'));break;}}
 function presence(){
-  ['실장A','실장C','실장T'].forEach((n,i)=>{
-    const el=$('#presence'+['A','C','T'][i]);
+  ['실장A','실장B','실장C'].forEach((n,i)=>{
+    const el=$('#presence'+['A','B','C'][i]);
     if(!el)return;
     const serverOnline=(S.presence||[]).some(x=>managerKey(x.manager)===n&&Number(x.online)===1);
     const on=serverOnline || managerKey(activeManager)===n;
@@ -289,7 +324,7 @@ function attendanceEta(a){
   return `${ap} ${hh}:${String(mn).padStart(2,'0')}`;
 }
 function pickupManagerOptions(){
-  return ['본인출근','실장T','실장A','실장B','실장C'];
+  return ['본인출근','실장A','실장B','실장C'];
 }
 function attendancePriority(status){
   return ({'시간중':4,'초이스중':3,'대기':2,'출근대기':1})[status]||0;
@@ -783,7 +818,7 @@ async function deleteWorkLogItem(itemId,jobId,label='',staffName=''){
   if(activeManager!=='실장A')return alert('colra1만 삭제할 수 있습니다.');
   if(!confirm(`${label||'선택한 기록'}을 일한현황에서 완전히 삭제하시겠습니까?\n이 기록은 DB에서도 삭제되며 복구되지 않습니다.`))return;
   await api('/work-logs/delete-item',{method:'POST',body:JSON.stringify({id:itemId||null,job_id:jobId||null,staff_name:staffName||'',manager:activeManager})});
-  alert('콜라 테스트 기록을 완전히 삭제했습니다.');
+  alert('테스트 기록을 완전히 삭제했습니다.');
   await refresh(true);
 }
 window.deleteWorkLogItem=deleteWorkLogItem;
@@ -894,7 +929,7 @@ window.selectWorkLogSearchDays=selectWorkLogSearchDays;
 function workLogDayHtml(data,{allowDelete=false}={}){
   const groups=data?.groups||[],totals=data?.totals||{staff_count:0,job_count:0,total_minutes:0};
   if(!groups.length)return '<div class="empty">일한현황이 없습니다.</div>';
-  return `<div class="work-log-total"><span>${esc(data.day||'오늘')} 전체 <b>${Number(totals.staff_count||0)}명</b></span><span><b>${Number(totals.job_count||0)}건</b></span><span>총 <b>${fmtMinutes(totals.total_minutes||0)}</b></span>${allowDelete?`<button type="button" class="row-btn danger" onclick="deleteAllTodayWorkLogs('${esc(data.day||'')}')">전체삭제</button>`:''}</div><div class="work-log-groups">${groups.map(g=>`<div class="work-log-group"><div class="work-log-head"><div class="work-log-staff">${esc(g.staff_label||g.staff_name||'-')}</div><div class="work-log-badge">${Number(g.job_count||0)}건 · 총 ${fmtMinutes(g.total_minutes||0)}</div></div><div class="work-log-list">${(g.items||[]).map(x=>{const info=workInfoLine(x.received_info||'');const label=[x.staff_name,x.shop_name].filter(Boolean).join(' · ');return `<div class="work-log-item"><div class="work-log-item-top"><div class="work-log-shop">${esc(x.shop_name||'-')}</div>${activeManager==='실장A'?`<div style="display:flex;gap:6px;align-items:center">${String(g.staff_label||g.staff_name||x.staff_name||'').trim()==='콜라 테스트'?`<button type="button" class="work-log-edit-btn" onclick="deleteWorkLogItem(${Number(x.id||0)},${Number(x.job_id||0)},${JSON.stringify(label).replace(/"/g,'&quot;')},${JSON.stringify(String(x.staff_name||g.staff_name||'')).replace(/"/g,'&quot;')})">삭제</button>`:''}<button type="button" class="work-log-edit-btn" onclick="editWorkLogInfo(${Number(x.id||0)},${Number(x.job_id||0)},${JSON.stringify(x.received_info||'').replace(/"/g,'&quot;')})">수정</button></div>`:''}</div><div class="work-log-time">${esc(x.start_time||'-')} ~ ${esc(x.end_time||'-')} · 집계 ${fmtMinutes((x.counted_minutes??x.elapsed_minutes)||0)}${Number((x.actual_minutes??x.elapsed_minutes)||0)!==Number((x.counted_minutes??x.elapsed_minutes)||0)?` (실제 ${fmtMinutes((x.actual_minutes??x.elapsed_minutes)||0)})`:''}</div><div class="work-log-sub">${esc(managerDisplayName(x.manager||''))}</div>${info?`<div class="work-log-note">${esc(info)}</div>`:''}</div>`}).join('')}</div></div>`).join('')}</div>`;
+  return `<div class="work-log-total"><span>${esc(data.day||'오늘')} 전체 <b>${Number(totals.staff_count||0)}명</b></span><span><b>${Number(totals.job_count||0)}건</b></span><span>총 <b>${fmtMinutes(totals.total_minutes||0)}</b></span>${allowDelete?`<button type="button" class="row-btn danger" onclick="deleteAllTodayWorkLogs('${esc(data.day||'')}')">전체삭제</button>`:''}</div><div class="work-log-groups">${groups.map(g=>`<div class="work-log-group"><div class="work-log-head"><div class="work-log-staff">${esc(g.staff_label||g.staff_name||'-')}</div><div class="work-log-badge">${Number(g.job_count||0)}건 · 총 ${fmtMinutes(g.total_minutes||0)}</div></div><div class="work-log-list">${(g.items||[]).map(x=>{const info=workInfoLine(x.received_info||'');const label=[x.staff_name,x.shop_name].filter(Boolean).join(' · ');return `<div class="work-log-item"><div class="work-log-item-top"><div class="work-log-shop">${esc(x.shop_name||'-')}</div>${isBigManagerClient()?`<div style="display:flex;gap:6px;align-items:center">${String(g.staff_label||g.staff_name||x.staff_name||'').trim()==='콜라 테스트'?`<button type="button" class="work-log-edit-btn" onclick="deleteWorkLogItem(${Number(x.id||0)},${Number(x.job_id||0)},${JSON.stringify(label).replace(/"/g,'&quot;')},${JSON.stringify(String(x.staff_name||g.staff_name||'')).replace(/"/g,'&quot;')})">삭제</button>`:''}<button type="button" class="work-log-edit-btn" onclick="editWorkLogInfo(${Number(x.id||0)},${Number(x.job_id||0)},${JSON.stringify(x.received_info||'').replace(/"/g,'&quot;')})">수정</button></div>`:''}</div><div class="work-log-time">${esc(x.start_time||'-')} ~ ${esc(x.end_time||'-')} · 집계 ${fmtMinutes((x.counted_minutes??x.elapsed_minutes)||0)}${Number((x.actual_minutes??x.elapsed_minutes)||0)!==Number((x.counted_minutes??x.elapsed_minutes)||0)?` (실제 ${fmtMinutes((x.actual_minutes??x.elapsed_minutes)||0)})`:''}</div><div class="work-log-sub">${esc(managerDisplayName(x.manager||''))}</div>${info?`<div class="work-log-note">${esc(info)}</div>`:''}</div>`}).join('')}</div></div>`).join('')}</div>`;
 }
 async function renderTodayWorkLogs(){
   ensureWorkLogSection();
@@ -1091,7 +1126,7 @@ function openShopChoice(attendanceIds){
   $('#form menu button[value="ok"]').textContent='선택완료';
 }
 
-function managerOptions(selected){const list=isBigManagerClient()?['실장T']:['실장A','실장B','실장C'];return list.map(x=>`<option value="${x}" ${x===selected?'selected':''}>${esc(managerDisplayName(x))}</option>`).join('')}
+function managerOptions(selected){const list=['실장A','실장B','실장C'];return list.map(x=>`<option value="${x}" ${x===selected?'selected':''}>${esc(managerDisplayName(x))}</option>`).join('')}
 function openSisterSend(jobId,shopId=0){if(!isBigManagerClient())return;const j=(S.jobs||[]).find(x=>Number(x.id)===Number(jobId))||{id:Number(jobId),shop_id:Number(shopId),shop_name:(S.shops||[]).find(x=>Number(x.id)===Number(shopId))?.name||''};modal('초이스 전송',`<label>노래방</label><input value="${esc(j.shop_name||'')}" readonly><label>옵션</label><div class="check-grid"><label class="check-card"><input type="checkbox" name="types" value="T">T</label><label class="check-card"><input type="checkbox" name="types" value="M">M</label><label class="check-card"><input type="checkbox" name="types" value="ㅈㅇ">ㅈㅇ</label></div><label>실장</label><select name="manager">${managerOptions(activeManager)}</select><label>언니에게 보낼 안내</label><textarea name="message" placeholder="간단한 안내 메시지"></textarea>`,async f=>{const options=f.getAll('types').join(' · ');await api('/sister/send',{method:'POST',body:JSON.stringify({job_id:jobId,options,manager:f.get('manager'),message:f.get('message')||''})});alert('언니에게 전송했습니다.');return 'no-refresh'},'언니 전송')}
 
 function choice(id){openShopChoice([id])}
@@ -1283,54 +1318,31 @@ function exactElapsed(j){
 async function finish(id){
   const j=S.jobs.find(x=>x.id===id);
   if(!j)return alert('일중 건을 찾을 수 없습니다.');
-  if(isBigManagerClient()){
-    const flow=(S.test_pickup_flows||[]).find(x=>Number(x.job_id)===Number(id)&&['requested','rejected_confirmed'].includes(x.status));
-    if(flow){openTestPickupAssign(flow);return}
-    const pending=(S.test_pickup_flows||[]).find(x=>Number(x.job_id)===Number(id)&&['driver_accepted','driver_rejected'].includes(x.status));
-    if(pending){checkSisterPickupRequest();return}
-  }
-  const row=(label,values)=>`
-    <div class="finish-row">
-      <div class="finish-label">${label}</div>
-      <div class="finish-options time-options" data-group="${label}">
-        ${values.map(v=>`<button type="button" data-value="${v}" onclick="toggleFinishValue(this)">${v}</button>`).join('')}
-      </div>
-    </div>`;
-  modal('일끝 정보 전송',`
+  modal('일끝',`
     <div class="received-box finish-top-box">
       <b>${esc(j.name)}</b> / ${shopButton(j.shop_id,j.shop_name)}<br>
-      통과 ${j.start_time||'-'} → 일끝 ${new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',hour12:false})}<br>
-      경과시간 <b>${elapsedFromStart(j)}</b>
+      시작 ${j.start_time||'-'} · 현재 경과 <b>${elapsedFromStart(j)}</b>
     </div>
-    <div class="finish-select-wrap">
-      ${row('타임',['바로','반티','1','2','3','4'])}
-      ${row('Room',['1','2','3'])}
-      ${row('ㅇㅊ',['1','2','3'])}
-    </div>
-    <input type="hidden" name="selected_info" id="selectedFinishInfo">`,
+    <label>실제 일한 시간</label>
+    <input type="number" name="worked_hours" min="0.5" max="24" step="0.5" placeholder="예: 2 또는 2.5" required>
+    <div class="notice">몇 시간 일했는지만 입력합니다. 30분은 0.5시간으로 입력하세요.</div>`,
     async f=>{
-      const selected=f.get('selected_info')||'';
-      if(!selected)throw new Error('타임, Room, ㅇㅊ 중 선택값을 입력해 주세요.');
-      const result=await api('/jobs/finish',{
+      const hours=Number(f.get('worked_hours')||0);
+      if(!hours||hours<0.5)throw new Error('일한 시간을 입력해 주세요.');
+      await api('/jobs/finish',{
         method:'POST',
-        body:JSON.stringify({id,manager:activeManager,received_info:selected})
+        body:JSON.stringify({
+          id,
+          manager:activeManager,
+          worked_hours:hours,
+          received_info:`일한시간 ${hours}시간`
+        })
       });
-      // 모든 실장에서 일끝 직후 서버 상태를 즉시 다시 읽어 목록을 한 번에 전환한다.
-      // 감지형 동기화의 다음 주기를 기다리지 않아 일중 행이 화면에 남는 현상을 막는다.
       await refresh(true);
-      if(result?.test_pickup_flow)setTimeout(checkSisterPickupRequest,80);
     }
   );
-  $('#form menu button[value="ok"]').textContent='전송';
+  $('#form menu button[value="ok"]').textContent='일끝';
 }
-window.toggleFinishValue=btn=>{
-  btn.classList.toggle('active');
-  const values=[...document.querySelectorAll('.finish-options')].flatMap(g=>{
-    return [...g.querySelectorAll('button.active')].map(x=>`${g.dataset.group} ${x.dataset.value}`);
-  });
-  const hidden=$('#selectedFinishInfo');
-  if(hidden)hidden.value=values.join(', ');
-};
 function unitButtons(n){return `<div class="choice-buttons">${['0.5','1','2','3','4'].map(v=>`<button type="button" data-v="${v}" onclick="sel(this,'${n}')">${v==='0.5'?'반':v}</button>`).join('')}</div><input type="hidden" name="${n}" placeholder="숫자 입력">`}window.sel=(b,n)=>{b.parentElement.querySelectorAll('button').forEach(x=>x.classList.remove('active'));b.classList.add('active');b.parentElement.nextElementSibling.value=b.dataset.v}
 function settle(id){
   const j=S.jobs.find(x=>x.id===id);
@@ -1659,7 +1671,7 @@ async function purgeShop(id,n){
     await refresh(true);
   }catch(e){alert('영구삭제 실패: '+e.message)}
 }
-$('#backupBtn').onclick=async()=>{if(!confirm('백업할까요?'))return;const d=await api('/backup'),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json'}));a.download='COLRA_'+new Date().toISOString().slice(0,10)+'.json';a.click()};
+$('#backupBtn').onclick=async()=>{if(!confirm('백업할까요?'))return;const d=await api('/backup'),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json'}));a.download='FAMILY_'+new Date().toISOString().slice(0,10)+'.json';a.click()};
 async function saveSettlementArchive(payload){
   const result=await api('/settlement-archives/save',{
     method:'POST',

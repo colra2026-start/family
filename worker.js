@@ -1,9 +1,9 @@
-const SETTLEMENT_ENABLED=true;
-// v102: 라라→유진 기존 staff_id 유지 이름통합 + 삭제차단 사유 상세표시
+const SETTLEMENT_ENABLED=false;
+// FAMILY v001: 관리자 3명 동일 큰실장 권한 / 비번 3535 / 언니앱 미사용 / 일끝 시간만 입력
 // v101: 가나 관리자 탭은 UI에서 제거, colra2 로그인 비밀번호는 colra1과 동일한 8989
 // 큰실장 역할은 여기 한 곳에서 관리한다. 테스트 종료 후 '실장A'(colra1)로 바꾸면 된다.
-const BIG_MANAGER_KEY='실장T';
-function isBigManager(manager){return String(manager||'').trim()===BIG_MANAGER_KEY;}
+const BIG_MANAGER_KEY='실장A';
+function isBigManager(manager){return ['실장A','실장B','실장C'].includes(String(manager||'').trim());}
 function declaredWorkMinutes(info){
   const text=String(info||'');
   let total=0;
@@ -29,14 +29,14 @@ function kstHour(now=new Date()){return new Date(now.getTime()+9*60*60*1000).get
 function kstCalendarDay(now=new Date()){return new Date(now.getTime()+9*60*60*1000).toISOString().slice(0,10);}
 function previousDay(day){const d=new Date(day+'T00:00:00Z');d.setUTCDate(d.getUTCDate()-1);return d.toISOString().slice(0,10);}
  // 당분간 정산대기/정산 저장 비활성화. 다시 쓸 때 true로 변경.
-export default{async fetch(req,env){const u=new URL(req.url);if(u.pathname.startsWith('/sister/'))return sisterWeb(req,env,u);if(u.pathname.startsWith('/api/'))return api(req,env,u);const res=await env.ASSETS.fetch(req);const h=new Headers(res.headers);if(/\.(?:js|css|html)$/.test(u.pathname)||u.pathname==='/'){h.set('Cache-Control','no-store, no-cache, must-revalidate, max-age=0');h.set('Pragma','no-cache');h.set('Expires','0')}return new Response(res.body,{status:res.status,statusText:res.statusText,headers:h})}};
+export default{async fetch(req,env){const u=new URL(req.url);if(u.pathname.startsWith('/sister/'))return J({message:'FAMILY에서는 언니앱을 사용하지 않습니다.'},404);if(u.pathname.startsWith('/api/'))return api(req,env,u);const res=await env.ASSETS.fetch(req);const h=new Headers(res.headers);if(/\.(?:js|css|html)$/.test(u.pathname)||u.pathname==='/'){h.set('Cache-Control','no-store, no-cache, must-revalidate, max-age=0');h.set('Pragma','no-cache');h.set('Expires','0')}return new Response(res.body,{status:res.status,statusText:res.statusText,headers:h})}};
 
 
 async function sisterWeb(req,env,u){
   const token=decodeURIComponent(u.pathname.split('/')[2]||'').trim();
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   if(u.pathname.endsWith('/manifest.json'))return new Response(JSON.stringify({
-    name:'콜라 언니앱',short_name:'콜라',id:'/sister/'+token,start_url:'/sister/'+token,
+    name:'FAMILY',short_name:'패밀리',id:'/sister/'+token,start_url:'/sister/'+token,
     scope:'/sister/'+token+'/',display:'standalone',background_color:'#f4f7fc',theme_color:'#2563eb',
     icons:[{src:'/sister/'+token+'/icon.svg',sizes:'any',type:'image/svg+xml',purpose:'any maskable'}]
   }),{headers:{'content-type':'application/manifest+json','cache-control':'no-store'}});
@@ -49,8 +49,8 @@ async function sisterWeb(req,env,u){
   `,{headers:{'content-type':'application/javascript','cache-control':'no-store','service-worker-allowed':'/sister/'+token+'/'}});
 
   const vapidPublicKey=String(env.VAPID_PUBLIC_KEY||'').trim();
-  const html=`<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563eb"><link rel="manifest" href="/sister/${token}/manifest.json"><title>콜라 언니앱</title><style>*{box-sizing:border-box}body{margin:0;background:#f3f6fb;font-family:system-ui,-apple-system,sans-serif;color:#111827}.app{max-width:480px;min-height:100vh;margin:auto;background:linear-gradient(#2563eb 0 150px,#f3f6fb 150px);padding:24px 18px}.head{color:#fff;text-align:center}.head small{font-weight:800}.head h1{margin:6px 0 20px;font-size:32px}.card{background:#fff;border-radius:24px;padding:24px;box-shadow:0 10px 30px #1e3a8a20;text-align:center}.shop{font-size:30px;font-weight:900;margin:12px}.opts{font-size:22px;font-weight:900;color:#334155;margin:20px}.guide{color:#2563eb;font-weight:900;margin:18px 0}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}button{border:0;border-radius:16px;padding:17px;font-size:20px;font-weight:900}.o{background:#2563eb;color:#fff}.x{background:#fff1f2;color:#e11d48;border:2px solid #e11d48}.orange{background:#f97316;color:#fff}.dark{background:#111827;color:#fff}.outline{background:#fff;border:2px solid #64748b}.full{width:100%;margin-top:10px;background:#2563eb;color:#fff}.ack-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 14px}.ack{width:100%;margin:0;background:#10b981;color:#fff}.reject{background:#fff1f2;color:#e11d48;border:2px solid #e11d48}.reject-box{display:none;margin:12px 0}.reject-box.show{display:block}.status-message{font-size:22px;line-height:1.5;font-weight:900;color:#334155}.ack.done{background:#e2e8f0;color:#475569}.time{font-size:54px;font-weight:900;color:#2563eb;margin:20px}.wait{padding:42px 8px;font-size:21px;font-weight:800;color:#64748b}.error{color:#dc2626;font-weight:800;white-space:pre-line;margin-top:12px}.notice{font-size:13px;color:#64748b;margin-top:12px}.toolbar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:0 0 12px}.toolbar button{font-size:14px;padding:12px;background:#e8eefc;color:#1d4ed8}.toolbar button.ok{background:#dcfce7;color:#047857}.toolbar button.logout{background:#dc2626;color:#fff;border:2px solid #b91c1c}input{width:100%;padding:16px;border-radius:14px;border:1px solid #cbd5e1;font-size:24px;text-align:center}.time-display{width:100%;min-height:74px;border:3px solid #111827;border-radius:18px;background:#f8fafc;font-size:30px;font-weight:900;color:#2563eb;display:flex;align-items:center;justify-content:center;cursor:pointer}.clock-modal{position:fixed;inset:0;background:#0f172acc;display:flex;align-items:center;justify-content:center;padding:18px;z-index:9999}.clock-panel{width:min(92vw,390px);background:#fff;border-radius:26px;padding:20px;box-shadow:0 20px 60px #0006}.clock-title{font-size:23px;font-weight:900;margin-bottom:8px}.clock-value{font-size:38px;font-weight:900;color:#2563eb;margin:8px 0 16px}.digital-time-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:14px 0}.digital-time-grid label{display:block;font-size:14px;font-weight:900;color:#475569;text-align:left}.digital-time-grid select{width:100%;margin-top:6px;padding:14px 10px;border:2px solid #cbd5e1;border-radius:14px;background:#fff;font-size:20px;font-weight:900;color:#111827}.clock-hint{font-size:14px;color:#64748b;font-weight:800;margin-top:8px}.clock-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}.clock-actions .cancel{background:#e2e8f0;color:#334155}.clock-actions .confirm{background:#2563eb;color:#fff}textarea{width:100%;border:1px solid #cbd5e1;border-radius:14px;padding:14px;font-size:16px;margin-top:18px}.row button:disabled{opacity:.45}.choice-selected{background:#2563eb!important;color:#fff!important;border-color:#2563eb!important}.report-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:18px 0}.report-grid label{font-weight:900;color:#334155}.report-grid input{font-size:22px;margin-top:7px}.post-buttons{display:grid;grid-template-columns:1fr;gap:10px;margin-top:20px}.post-buttons button{width:100%}.other-response-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.other-response-actions button{width:100%}.other-response-actions .selected{background:#2563eb!important;color:#fff!important;border-color:#2563eb!important}.other-response-actions .reject.selected{background:#e11d48!important;color:#fff!important;border-color:#e11d48!important}.sister-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:12000;max-width:min(90vw,420px);padding:12px 16px;border-radius:14px;background:#111827;color:#fff;font-size:15px;font-weight:800;line-height:1.4;box-shadow:0 8px 30px #0004;opacity:0;pointer-events:none;transition:opacity .18s}.sister-toast.show{opacity:1}.sister-toast.error{background:#b91c1c}
-.app{width:100%;padding-left:clamp(10px,4vw,18px);padding-right:clamp(10px,4vw,18px)}.card{padding:clamp(16px,5vw,24px);overflow:hidden}.head h1{font-size:clamp(26px,8vw,32px);overflow-wrap:anywhere;word-break:keep-all}.shop{font-size:clamp(22px,7vw,30px);overflow-wrap:anywhere;word-break:keep-all}.opts{font-size:clamp(18px,5.8vw,22px);overflow-wrap:anywhere;word-break:keep-all}.status-message{font-size:clamp(17px,5.2vw,22px);line-height:1.45;overflow-wrap:anywhere;word-break:keep-all}.guide{font-size:clamp(15px,4.5vw,18px);line-height:1.45;overflow-wrap:anywhere;word-break:keep-all}.row{grid-template-columns:repeat(2,minmax(0,1fr))}.row button,button{min-width:0;font-size:clamp(15px,5vw,20px);white-space:normal;word-break:keep-all;overflow-wrap:anywhere}.toolbar{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.toolbar button{min-width:0;font-size:clamp(11px,3.6vw,14px);padding:11px 5px;white-space:normal}.report-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.report-grid input{min-width:0;padding:12px 4px;font-size:clamp(17px,5vw,22px)}textarea,input,select{max-width:100%}@media(max-width:360px){.app{padding-left:8px;padding-right:8px}.card{padding:14px;border-radius:20px}.row{gap:7px}.toolbar{gap:5px}.time{font-size:44px}.report-grid{gap:5px}.post-buttons{gap:7px}}</style></head><body><main class="app"><header class="head"><small>콜라</small><h1 id="name">언니앱</h1></header><div class="toolbar"><button id="installBtn" hidden>홈 화면 설치</button><button id="notifyBtn">알림 허용</button><button id="logoutBtn" class="logout" type="button">로그아웃</button></div><form class="card" id="login"><h2>비밀번호</h2><input name="pin" id="pin" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="휴대폰 뒤 4자리" required><button type="submit" class="full">확인</button><div id="loginError" class="error"></div></form><section class="card" id="screen" hidden><div class="wait">연결 중...</div></section></main><div id="sisterToast" class="sister-toast" aria-live="polite"></div><script>
+  const html=`<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2563eb"><link rel="manifest" href="/sister/${token}/manifest.json"><title>FAMILY</title><style>*{box-sizing:border-box}body{margin:0;background:#f3f6fb;font-family:system-ui,-apple-system,sans-serif;color:#111827}.app{max-width:480px;min-height:100vh;margin:auto;background:linear-gradient(#2563eb 0 150px,#f3f6fb 150px);padding:24px 18px}.head{color:#fff;text-align:center}.head small{font-weight:800}.head h1{margin:6px 0 20px;font-size:32px}.card{background:#fff;border-radius:24px;padding:24px;box-shadow:0 10px 30px #1e3a8a20;text-align:center}.shop{font-size:30px;font-weight:900;margin:12px}.opts{font-size:22px;font-weight:900;color:#334155;margin:20px}.guide{color:#2563eb;font-weight:900;margin:18px 0}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}button{border:0;border-radius:16px;padding:17px;font-size:20px;font-weight:900}.o{background:#2563eb;color:#fff}.x{background:#fff1f2;color:#e11d48;border:2px solid #e11d48}.orange{background:#f97316;color:#fff}.dark{background:#111827;color:#fff}.outline{background:#fff;border:2px solid #64748b}.full{width:100%;margin-top:10px;background:#2563eb;color:#fff}.ack-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 14px}.ack{width:100%;margin:0;background:#10b981;color:#fff}.reject{background:#fff1f2;color:#e11d48;border:2px solid #e11d48}.reject-box{display:none;margin:12px 0}.reject-box.show{display:block}.status-message{font-size:22px;line-height:1.5;font-weight:900;color:#334155}.ack.done{background:#e2e8f0;color:#475569}.time{font-size:54px;font-weight:900;color:#2563eb;margin:20px}.wait{padding:42px 8px;font-size:21px;font-weight:800;color:#64748b}.error{color:#dc2626;font-weight:800;white-space:pre-line;margin-top:12px}.notice{font-size:13px;color:#64748b;margin-top:12px}.toolbar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:0 0 12px}.toolbar button{font-size:14px;padding:12px;background:#e8eefc;color:#1d4ed8}.toolbar button.ok{background:#dcfce7;color:#047857}.toolbar button.logout{background:#dc2626;color:#fff;border:2px solid #b91c1c}input{width:100%;padding:16px;border-radius:14px;border:1px solid #cbd5e1;font-size:24px;text-align:center}.time-display{width:100%;min-height:74px;border:3px solid #111827;border-radius:18px;background:#f8fafc;font-size:30px;font-weight:900;color:#2563eb;display:flex;align-items:center;justify-content:center;cursor:pointer}.clock-modal{position:fixed;inset:0;background:#0f172acc;display:flex;align-items:center;justify-content:center;padding:18px;z-index:9999}.clock-panel{width:min(92vw,390px);background:#fff;border-radius:26px;padding:20px;box-shadow:0 20px 60px #0006}.clock-title{font-size:23px;font-weight:900;margin-bottom:8px}.clock-value{font-size:38px;font-weight:900;color:#2563eb;margin:8px 0 16px}.digital-time-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:14px 0}.digital-time-grid label{display:block;font-size:14px;font-weight:900;color:#475569;text-align:left}.digital-time-grid select{width:100%;margin-top:6px;padding:14px 10px;border:2px solid #cbd5e1;border-radius:14px;background:#fff;font-size:20px;font-weight:900;color:#111827}.clock-hint{font-size:14px;color:#64748b;font-weight:800;margin-top:8px}.clock-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}.clock-actions .cancel{background:#e2e8f0;color:#334155}.clock-actions .confirm{background:#2563eb;color:#fff}textarea{width:100%;border:1px solid #cbd5e1;border-radius:14px;padding:14px;font-size:16px;margin-top:18px}.row button:disabled{opacity:.45}.choice-selected{background:#2563eb!important;color:#fff!important;border-color:#2563eb!important}.report-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:18px 0}.report-grid label{font-weight:900;color:#334155}.report-grid input{font-size:22px;margin-top:7px}.post-buttons{display:grid;grid-template-columns:1fr;gap:10px;margin-top:20px}.post-buttons button{width:100%}.other-response-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.other-response-actions button{width:100%}.other-response-actions .selected{background:#2563eb!important;color:#fff!important;border-color:#2563eb!important}.other-response-actions .reject.selected{background:#e11d48!important;color:#fff!important;border-color:#e11d48!important}.sister-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:12000;max-width:min(90vw,420px);padding:12px 16px;border-radius:14px;background:#111827;color:#fff;font-size:15px;font-weight:800;line-height:1.4;box-shadow:0 8px 30px #0004;opacity:0;pointer-events:none;transition:opacity .18s}.sister-toast.show{opacity:1}.sister-toast.error{background:#b91c1c}
+.app{width:100%;padding-left:clamp(10px,4vw,18px);padding-right:clamp(10px,4vw,18px)}.card{padding:clamp(16px,5vw,24px);overflow:hidden}.head h1{font-size:clamp(26px,8vw,32px);overflow-wrap:anywhere;word-break:keep-all}.shop{font-size:clamp(22px,7vw,30px);overflow-wrap:anywhere;word-break:keep-all}.opts{font-size:clamp(18px,5.8vw,22px);overflow-wrap:anywhere;word-break:keep-all}.status-message{font-size:clamp(17px,5.2vw,22px);line-height:1.45;overflow-wrap:anywhere;word-break:keep-all}.guide{font-size:clamp(15px,4.5vw,18px);line-height:1.45;overflow-wrap:anywhere;word-break:keep-all}.row{grid-template-columns:repeat(2,minmax(0,1fr))}.row button,button{min-width:0;font-size:clamp(15px,5vw,20px);white-space:normal;word-break:keep-all;overflow-wrap:anywhere}.toolbar{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.toolbar button{min-width:0;font-size:clamp(11px,3.6vw,14px);padding:11px 5px;white-space:normal}.report-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.report-grid input{min-width:0;padding:12px 4px;font-size:clamp(17px,5vw,22px)}textarea,input,select{max-width:100%}@media(max-width:360px){.app{padding-left:8px;padding-right:8px}.card{padding:14px;border-radius:20px}.row{gap:7px}.toolbar{gap:5px}.time{font-size:44px}.report-grid{gap:5px}.post-buttons{gap:7px}}</style></head><body><main class="app"><header class="head"><small>패밀리</small><h1 id="name">언니앱</h1></header><div class="toolbar"><button id="installBtn" hidden>홈 화면 설치</button><button id="notifyBtn">알림 허용</button><button id="logoutBtn" class="logout" type="button">로그아웃</button></div><form class="card" id="login"><h2>비밀번호</h2><input name="pin" id="pin" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="휴대폰 뒤 4자리" required><button type="submit" class="full">확인</button><div id="loginError" class="error"></div></form><section class="card" id="screen" hidden><div class="wait">연결 중...</div></section></main><div id="sisterToast" class="sister-toast" aria-live="polite"></div><script>
 const token=${JSON.stringify(token)},vapidPublicKey=${JSON.stringify(vapidPublicKey)};let lastAssignmentId=Number(localStorage.getItem('sister_last_'+token)||0),sessionVersion=Number(localStorage.getItem('sister_session_'+token)||0),installPrompt=null,loading=false,timePickerBusy=false,timePickerReleaseTimer=null,lastStateVersion=-1,lastRenderedStateKey='';const q=s=>document.querySelector(s);function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}let sisterToastTimer=0;function sisterToast(msg,isError=false){const el=q('#sisterToast');if(!el)return;clearTimeout(sisterToastTimer);el.textContent=String(msg||'');el.classList.toggle('error',!!isError);el.classList.add('show');sisterToastTimer=setTimeout(()=>el.classList.remove('show'),2200)}async function api(path,opt={}){const r=await fetch(path,{cache:'no-store',headers:{'content-type':'application/json','accept':'application/json',...(opt.headers||{})},...opt});const t=await r.text();let d={};try{d=t?JSON.parse(t):{}}catch(_){throw Error('서버 응답 오류')}if(!r.ok)throw Error(d.message||'처리 오류');return d}function normalizeOptions(v){return String(v||'').replace(/티/g,'T').replace(/중/g,'M').replace(/ㅇㅊ/g,'ㅈㅇ').replace(/ㅈ(?!ㅇ)/g,'ㅈㅇ')}function ding(){return}async function localNotice(a){if(Notification.permission==='granted'&&document.hidden){const reg=await navigator.serviceWorker.ready;await reg.showNotification('새 초이스',{body:(a.shop_name||'')+' '+normalizeOptions(a.options||''),icon:'/sister/'+token+'/icon.svg',silent:true,tag:'choice-'+a.id,renotify:true,data:{url:'/sister/'+token}})}}let choiceDraft='',bigRequestDraft='',postReportDraft='',otherJobDraft='';
 function isTest(d){return !!d.is_test_sister}
 function choiceView(a){return '<div class="shop">'+esc(a.shop_name||'초이스')+'</div><div class="opts">'+esc(normalizeOptions(a.options||''))+'</div>'+(a.message?'<div class="status-message" style="font-size:18px">'+esc(a.message)+'</div>':'')+'<div class="guide">🎯 초이스 성공? O 눌러주시면<br>실장님이 슝~ 이동해 또 열심히 일할께용 🚗💨</div><div class="row"><button id="oBtn" type="button" class="outline">O</button><button id="xBtn" type="button" class="outline">X</button></div><button id="choiceSendBtn" type="button" class="full" disabled>전송</button>'}
@@ -193,7 +193,20 @@ function parseSisterSettlementMessage(message){
 }
 async function requireSession(req,db){const token=cookieValue(req,'goodys_session');if(!token)return null;const row=await db.prepare("SELECT token,manager FROM auth_sessions WHERE token=? AND expires_at>datetime('now')").bind(token).first();if(!row){await db.prepare("DELETE FROM auth_sessions WHERE token=?").bind(token).run();return null}await db.prepare("UPDATE auth_sessions SET last_seen=datetime('now'),expires_at=datetime('now','+30 minutes') WHERE token=?").bind(token).run();return row}
 async function api(req,env,u){try{const db=env.DB,p=u.pathname,m=req.method;if(!db)return J({message:'D1 미연결'},503);await ensureIntegrity(db);
-if(p==='/api/auth/login'&&m==='POST'){const x=await B(req);const raw=String(x.manager||'').trim();const manager=({'test':'실장T','TEST':'실장T','Test':'실장T','colra1test':'실장T','콜라1테스트':'실장T','실장T':'실장T','colra1':'실장A','실장A':'실장A','chana':'실장B','ghana':'실장B','Ghana':'실장B','remon':'실장B','실장B':'실장B','colra2':'실장C','실장C':'실장C'})[raw]||raw;const expected=manager==='실장T'?'1804':(manager==='실장A'||manager==='실장C')?'8989':'6969';if(!['실장T','실장A','실장B','실장C'].includes(manager)||String(x.password||'')!==expected)return J({message:'아이디 또는 비밀번호가 올바르지 않습니다.'},401);const token=crypto.randomUUID().replace(/-/g,'')+crypto.randomUUID().replace(/-/g,'');await db.prepare("DELETE FROM auth_sessions WHERE manager=? OR expires_at<=datetime('now')").bind(manager).run();await db.prepare("INSERT INTO auth_sessions(token,manager,last_seen,expires_at) VALUES(?,?,datetime('now'),datetime('now','+30 minutes'))").bind(token,manager).run();return JCookie({ok:true,manager},200,sessionCookie(token))}
+if(p==='/api/auth/login'&&m==='POST'){
+  const x=await B(req),raw=String(x.manager||'').trim();
+  const manager=({
+    '실장A':'실장A','패밀리-가나':'실장A','가나':'실장A',
+    '실장B':'실장B','패밀리-스마일':'실장B','스마일':'실장B',
+    '실장C':'실장C','패밀리-구글':'실장C','구글':'실장C'
+  })[raw]||raw;
+  if(!['실장A','실장B','실장C'].includes(manager)||String(x.password||'')!=='3535')
+    return J({message:'아이디 또는 비밀번호가 올바르지 않습니다.'},401);
+  const token=crypto.randomUUID().replace(/-/g,'')+crypto.randomUUID().replace(/-/g,'');
+  await db.prepare("DELETE FROM auth_sessions WHERE manager=? OR expires_at<=datetime('now')").bind(manager).run();
+  await db.prepare("INSERT INTO auth_sessions(token,manager,last_seen,expires_at) VALUES(?,?,datetime('now'),datetime('now','+30 minutes'))").bind(token,manager).run();
+  return JCookie({ok:true,manager},200,sessionCookie(token));
+}
 if(p==='/api/auth/status'){const session=await requireSession(req,db);return session?J({authenticated:true,manager:session.manager}):JCookie({authenticated:false},401,sessionCookie('',0))}
 if(p==='/api/auth/logout'&&m==='POST'){const token=cookieValue(req,'goodys_session');if(token)await db.prepare("DELETE FROM auth_sessions WHERE token=?").bind(token).run();return JCookie({ok:true},200,sessionCookie('',0))}
 
@@ -398,12 +411,13 @@ if(p==='/api/sync/version'){
   return J({ok:true,version:Number(v?.value||0)});
 }
 if(p==='/api/presence/status'){
-  const presence=await db.prepare("SELECT manager,last_seen,CASE WHEN last_seen>=datetime('now','-20 seconds') THEN 1 ELSE 0 END online FROM manager_presence WHERE manager IN ('실장A','실장B','실장C','실장T') ORDER BY manager").all();
+  const presence=await db.prepare("SELECT manager,last_seen,CASE WHEN last_seen>=datetime('now','-20 seconds') THEN 1 ELSE 0 END online FROM manager_presence WHERE manager IN ('실장A','실장B','실장C') ORDER BY manager").all();
   return J({ok:true,presence:presence.results||[]});
 }
 
 
-if(p==='/api/sister/link'&&m==='POST'){
+if(p==='/api/sister/link'&&m==='POST'){return J({message:'FAMILY에서는 언니앱을 사용하지 않습니다.'},403);}
+if(false){
   const x=await B(req),staffId=Number(x.staff_id);if(!staffId)return J({message:'언니를 선택해 주세요.'},400);
   const s=await db.prepare("SELECT id,name,phone FROM staff WHERE id=? AND deleted=0").bind(staffId).first();if(!s)return J({message:'언니 정보를 찾을 수 없습니다.'},404);
   const digits=String(s.phone||'').replace(/\D/g,'');if(digits.length<4)return J({message:'등록된 전화번호가 4자리 이상이어야 합니다.'},400);
@@ -647,19 +661,24 @@ if(p==='/api/sister/other-job-review'&&m==='POST'){
 if(p==='/api/presence/heartbeat'&&m==='POST'){
   const x=await B(req);
   const raw=String(x.manager||'').trim();
-  const manager=({'test':'실장T','TEST':'실장T','Test':'실장T','colra1test':'실장T','콜라1테스트':'실장T','실장T':'실장T','colra1':'실장A','chana':'실장B','Chana':'실장B','CHANA':'실장B','ghana':'실장B','Ghana':'실장B','GHANA':'실장B','remon':'실장B','실장A':'실장A','실장B':'실장B','colra2':'실장C','실장C':'실장C'})[raw]||raw;
-  if(!['실장T','실장A','실장B','실장C'].includes(manager))return J({message:'실장 정보가 올바르지 않습니다.'},400);
+  const manager=({
+    '실장A':'실장A','패밀리-가나':'실장A','가나':'실장A',
+    '실장B':'실장B','패밀리-스마일':'실장B','스마일':'실장B',
+    '실장C':'실장C','패밀리-구글':'실장C','구글':'실장C'
+  })[raw]||raw;
+  if(!['실장A','실장B','실장C'].includes(manager))return J({message:'실장 정보가 올바르지 않습니다.'},400);
   await db.prepare("INSERT INTO manager_presence(manager,last_seen) VALUES(?,datetime('now')) ON CONFLICT(manager) DO UPDATE SET last_seen=excluded.last_seen").bind(manager).run();
-  if(manager==='실장B'){
-    await db.prepare("INSERT INTO manager_presence(manager,last_seen) VALUES('chana',datetime('now')) ON CONFLICT(manager) DO UPDATE SET last_seen=excluded.last_seen").run();
-  }
   const row=await db.prepare("SELECT manager,last_seen,1 online FROM manager_presence WHERE manager=?").bind(manager).first();
   return J({ok:true,presence:row});
 }
 if(p==='/api/presence/logout'&&m==='POST'){
   const x=await B(req);
   const raw=String(x.manager||'').trim();
-  const manager=({'test':'실장T','TEST':'실장T','Test':'실장T','colra1test':'실장T','콜라1테스트':'실장T','실장T':'실장T','colra1':'실장A','chana':'실장B','Chana':'실장B','CHANA':'실장B','ghana':'실장B','Ghana':'실장B','GHANA':'실장B','remon':'실장B','실장A':'실장A','실장B':'실장B','colra2':'실장C','실장C':'실장C'})[raw]||raw;
+  const manager=({
+    '실장A':'실장A','패밀리-가나':'실장A','가나':'실장A',
+    '실장B':'실장B','패밀리-스마일':'실장B','스마일':'실장B',
+    '실장C':'실장C','패밀리-구글':'실장C','구글':'실장C'
+  })[raw]||raw;
   await db.prepare("UPDATE manager_presence SET last_seen=datetime('now','-1 day') WHERE manager=?").bind(manager).run();
   return J({ok:true});
 }
@@ -942,7 +961,7 @@ if(p==='/api/choice/pass'&&m==='POST'){
 }
 
 if(p==='/api/work-logs/search'){
-  if(session.manager!=='실장A')return J({message:'colra1만 검색할 수 있습니다.'},403);
+  if(!isBigManager(session.manager))return J({message:'실장 권한이 필요합니다.'},403);
   const staff=String(u.searchParams.get('staff')||'').trim();
   const shop=String(u.searchParams.get('shop')||'').trim();
   const inputStartDate=String(u.searchParams.get('start_date')||'').trim();
@@ -1023,14 +1042,14 @@ if(p==='/api/work-logs/delete-item'&&m==='POST'){
   if(!target)return J({message:'이미 삭제되었거나 해당 기록을 찾을 수 없습니다.'},404);
 
   const storedStaffName=String(target.staff_name||'').trim();
-  if(storedStaffName!=='콜라 테스트' || (requestedStaffName && requestedStaffName!=='콜라 테스트')){
-    return J({message:'콜라 테스트 기록만 완전 삭제할 수 있습니다.'},403);
+  if(storedStaffName!=='패밀리 테스트' || (requestedStaffName && requestedStaffName!=='패밀리 테스트')){
+    return J({message:'패밀리 테스트 기록만 완전 삭제할 수 있습니다.'},403);
   }
 
   const targetJobId=Number(target.job_id||jobId||0);
   const r=targetJobId
-    ? await db.prepare("DELETE FROM work_logs WHERE job_id=? AND TRIM(staff_name)='콜라 테스트'").bind(targetJobId).run()
-    : await db.prepare("DELETE FROM work_logs WHERE id=? AND TRIM(staff_name)='콜라 테스트'").bind(Number(target.id)).run();
+    ? await db.prepare("DELETE FROM work_logs WHERE job_id=? AND TRIM(staff_name)='패밀리 테스트'").bind(targetJobId).run()
+    : await db.prepare("DELETE FROM work_logs WHERE id=? AND TRIM(staff_name)='패밀리 테스트'").bind(Number(target.id)).run();
   const deleted=Number(r?.meta?.changes||0);
   if(!deleted)return J({message:'삭제되지 않았습니다. 화면을 새로고침한 뒤 다시 시도해 주세요.'},409);
   await bump(db);
@@ -1073,48 +1092,27 @@ if(p==='/api/work-logs/update-info'&&m==='POST'){
 if(p==='/api/jobs/finish'&&m==='POST'){
  const x=await B(req),j=await db.prepare("SELECT * FROM jobs WHERE id=? AND status='시간중'").bind(x.id).first();
  if(!j)return J({message:'이미 일끝 처리되었거나 일중 건을 찾을 수 없습니다.'},400);
- const stRow=await db.prepare("SELECT name FROM staff WHERE id=?").bind(j.staff_id).first();
- const isTestSister=['테스트1','테스트2'].includes(String(stRow?.name||'').trim());
- const latestAssignment=isTestSister?await db.prepare("SELECT * FROM sister_assignments WHERE staff_id=? AND job_id=? ORDER BY id DESC LIMIT 1").bind(j.staff_id,j.id).first():null;
+ const hours=Number(x.worked_hours||0);
+ if(!Number.isFinite(hours)||hours<0.5||hours>24)return J({message:'일한 시간을 0.5~24시간 사이로 입력해 주세요.'},400);
+ const units=Math.round(hours*2);
+ const info=`일한시간 ${hours}시간`;
 
  await db.prepare("UPDATE attendance SET status='대기',sequence=? WHERE staff_id=? AND status='시간중'")
    .bind(await seq(db),j.staff_id).run();
 
- // 테스트 언니는 일반 픽업대기에 바로 넣지 않고, 큰실장 배정 -> 기사 수락/거절 -> 큰실장 확인 흐름으로 보낸다.
- if(isTestSister&&latestAssignment){
-   await db.prepare("UPDATE sister_assignments SET status='big_waiting',message=?,pickup_requested_at=datetime('now'),pickup_status='waiting',pickup_request_type='실장 일끝',updated_at=datetime('now') WHERE id=?")
-     .bind(String(x.received_info||''),latestAssignment.id).run();
-   await db.prepare("INSERT INTO test_pickup_flow(assignment_id,staff_id,job_id,shop_id,shop_name,sister_request_type,sister_message,big_manager,status,created_at,updated_at) VALUES(?,?,?,?,?,'실장 일끝',?,?,'requested',datetime('now'),datetime('now')) ON CONFLICT(assignment_id) DO UPDATE SET sister_request_type='실장 일끝',sister_message=excluded.sister_message,status='requested',assigned_manager=NULL,eta_choice=NULL,driver_response=NULL,reject_reason=NULL,driver_message=NULL,driver_responded_at=NULL,big_confirmed_at=NULL,driver_acknowledged_at=NULL,updated_at=datetime('now')")
-     .bind(latestAssignment.id,j.staff_id,j.id,j.shop_id,latestAssignment.shop_name||'',String(x.received_info||''),BIG_MANAGER_KEY).run();
- }else{
-   await db.prepare("INSERT OR IGNORE INTO pickup_waiting(day,job_id,staff_id,shop_id,manager,finished_at,finished_time,completed) VALUES(date('now','+9 hours'),?,?,?,?,datetime('now'),strftime('%H:%M','now','+9 hours'),0)")
-     .bind(j.id,j.staff_id,j.shop_id,x.manager||'').run();
- }
-
  try{
-   const stMs=new Date(String(j.start_at).replace(' ','T')+'Z').getTime();
-   const elapsed=Math.max(0,Math.floor((Date.now()-stMs)/60000));
+   const elapsed=Math.round(hours*60);
    await db.prepare("INSERT OR IGNORE INTO work_logs(day,job_id,staff_id,staff_name,staff_affiliation,shop_id,shop_name,manager,start_at,start_time,end_at,end_time,elapsed_minutes,received_info,created_at) SELECT COALESCE(j.day,?),j.id,j.staff_id,s.name,s.affiliation,j.shop_id,sh.name,?,j.start_at,j.start_time,datetime('now'),strftime('%H:%M','now','+9 hours'),?,?,datetime('now') FROM jobs j JOIN staff s ON s.id=j.staff_id LEFT JOIN shops sh ON sh.id=j.shop_id WHERE j.id=?")
-     .bind(kstBusinessDay(),x.manager||'',elapsed,x.received_info||'',j.id).run();
-   await db.prepare("UPDATE work_logs SET manager=COALESCE(NULLIF(?,''),manager),end_at=datetime('now'),end_time=strftime('%H:%M','now','+9 hours'),elapsed_minutes=?,received_info=COALESCE(NULLIF(?,''),received_info) WHERE job_id=?")
-     .bind(x.manager||'',elapsed,x.received_info||'',j.id).run();
- }catch(e){
-   console.log('work_logs save skipped',e?.message||e);
- }
+     .bind(kstBusinessDay(),x.manager||'',elapsed,info,j.id).run();
+   await db.prepare("UPDATE work_logs SET manager=COALESCE(NULLIF(?,''),manager),end_at=datetime('now'),end_time=strftime('%H:%M','now','+9 hours'),elapsed_minutes=?,received_info=? WHERE job_id=?")
+     .bind(x.manager||'',elapsed,info,j.id).run();
+ }catch(e){console.log('work_logs save skipped',e?.message||e)}
 
- // 테스트 흐름은 픽업 최종확인까지 job을 유지해야 하므로 여기서 정산대기로 바꾸거나 삭제하지 않는다.
- if(!isTestSister){
-   if(SETTLEMENT_ENABLED){
-     const st=new Date(String(j.start_at).replace(' ','T')+'Z').getTime(),units=Math.max(1,Math.ceil((Date.now()-st)/1800000));
-     await db.prepare("UPDATE jobs SET status='정산대기',end_at=datetime('now'),end_time=strftime('%H:%M','now','+9 hours'),received_at=datetime('now'),received_time=strftime('%H:%M','now','+9 hours'),received_info=?,duration_units=?,manager=? WHERE id=?")
-       .bind(x.received_info||'',units,x.manager||'',x.id).run();
-   }else{
-     await db.prepare("DELETE FROM jobs WHERE id=? AND status='시간중'").bind(x.id).run();
-   }
- }
+ await db.prepare("UPDATE jobs SET status='정산대기',end_at=datetime('now'),end_time=strftime('%H:%M','now','+9 hours'),received_at=datetime('now'),received_time=strftime('%H:%M','now','+9 hours'),received_info=?,duration_units=?,manager=? WHERE id=?")
+   .bind(info,units,x.manager||'',x.id).run();
 
  await bump(db);
- return J({ok:true,settlement_enabled:SETTLEMENT_ENABLED,test_pickup_flow:isTestSister&&!!latestAssignment});
+ return J({ok:true,worked_hours:hours,settlement_enabled:false});
 }
 if(p==='/api/pickup/returning'&&m==='POST'){
   const x=await B(req);
