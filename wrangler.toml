@@ -1,0 +1,12 @@
+name = "family"
+main = "worker.js"
+compatibility_date = "2026-09-18"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "family-db"
+database_id = "a07cc38f-4c8e-4662-b4c3-82c30bb8756b"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
